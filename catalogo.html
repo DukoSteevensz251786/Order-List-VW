@@ -33,9 +33,7 @@ h1,h2,h3{margin:0}
   font-size:15px;background:#fff;color:var(--ink)}
 .search input:focus{outline:3px solid var(--amber)}
 .search svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);opacity:.5}
-.chips{display:flex;gap:7px;overflow-x:auto;padding:11px 16px 12px;max-width:1080px;margin:0 auto;
-  scrollbar-width:none}
-.chips::-webkit-scrollbar{display:none}
+.chips{display:flex;flex-wrap:wrap;gap:7px;padding:11px 16px 12px;max-width:1080px;margin:0 auto}
 .chip{flex:none;padding:7px 13px;border-radius:20px;font-size:13px;font-weight:600;
   background:rgba(255,255,255,.12);color:#E4EBF5;white-space:nowrap;transition:.12s}
 .chip.on{background:var(--amber);color:var(--navy)}
