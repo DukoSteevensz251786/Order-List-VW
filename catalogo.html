@@ -33,7 +33,14 @@ h1,h2,h3{margin:0}
   font-size:15px;background:#fff;color:var(--ink)}
 .search input:focus{outline:3px solid var(--amber)}
 .search svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);opacity:.5}
-.chips{display:flex;flex-wrap:wrap;gap:7px;padding:11px 16px 12px;max-width:1080px;margin:0 auto}
+.chipwrap{position:relative;max-width:1080px;margin:0 auto}
+.chips{display:flex;gap:7px;overflow-x:auto;padding:11px 16px 12px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.chips::-webkit-scrollbar{display:none}
+.chipwrap::before,.chipwrap::after{content:"";position:absolute;top:0;bottom:0;width:28px;pointer-events:none;z-index:1;opacity:0;transition:opacity .15s}
+.chipwrap::before{left:0;background:linear-gradient(90deg,var(--navy),transparent)}
+.chipwrap::after{right:0;background:linear-gradient(270deg,var(--navy),transparent)}
+.chipwrap.more-l::before{opacity:1}
+.chipwrap.more-r::after{opacity:1}
 .chip{flex:none;padding:7px 13px;border-radius:20px;font-size:13px;font-weight:600;
   background:rgba(255,255,255,.12);color:#E4EBF5;white-space:nowrap;transition:.12s}
 .chip.on{background:var(--amber);color:var(--navy)}
@@ -161,7 +168,7 @@ h1,h2,h3{margin:0}
       <input id="q" type="search" placeholder="Buscar por código ou descri&ccedil;&atilde;o…" autocomplete="off">
     </div>
   </div>
-  <div class="chips" id="chips"></div>
+  <div class="chipwrap"><div class="chips" id="chips"></div></div>
 </header>
 
 <div class="promise"><div class="promise-in">
@@ -255,6 +262,17 @@ const chipsEl = $("#chips");
   b.onclick=()=>{activeCat=c;[...chipsEl.children].forEach(x=>x.classList.toggle("on",x.dataset.c===c));render();};
   chipsEl.appendChild(b);
 });
+
+/* edge fades: show only when there's more to scroll */
+const chipWrap = chipsEl.parentElement;
+function updateChipFades(){
+  const max = chipsEl.scrollWidth - chipsEl.clientWidth;
+  chipWrap.classList.toggle("more-l", chipsEl.scrollLeft > 2);
+  chipWrap.classList.toggle("more-r", chipsEl.scrollLeft < max - 2);
+}
+chipsEl.addEventListener("scroll", updateChipFades, {passive:true});
+window.addEventListener("resize", updateChipFades);
+updateChipFades();
 
 function visible(){
   const t=term.trim().toLowerCase();
