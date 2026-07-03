@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Van Vliet Automotive — Catálogo de Peças VW</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --navy:#14294B; --blue:#2E5496; --blue2:#3D6BC4;
+  --amber:#E8850C; --amber-d:#C4700A;
+  --bg:#EAEEF3; --card:#FFFFFF; --ink:#182233; --muted:#6A7788;
+  --line:#DCE3EC; --ok:#1F8A4C; --danger:#C0392B;
+  --mono:ui-monospace,"SF Mono","Cascadia Mono","Roboto Mono",Menlo,Consolas,monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;padding-bottom:88px}
+button{font-family:inherit;cursor:pointer;border:none;background:none}
+h1,h2,h3{margin:0}
+/* header */
+.top{position:sticky;top:0;z-index:40;background:var(--navy);color:#fff;
+  box-shadow:0 2px 10px rgba(20,41,75,.25)}
+.top-in{max-width:1080px;margin:0 auto;padding:12px 16px 10px}
+.brand{display:flex;align-items:center;gap:10px}
+.mark{width:34px;height:34px;border-radius:7px;background:var(--amber);
+  display:grid;place-items:center;font-weight:800;color:var(--navy);font-size:15px;letter-spacing:-.5px;flex:none}
+.brand h1{font-size:16px;font-weight:700;letter-spacing:.2px;line-height:1.15}
+.brand .sub{font-size:11px;color:#B9C6DD;font-weight:500}
+.search{margin-top:11px;position:relative}
+.search input{width:100%;border:none;border-radius:10px;padding:12px 14px 12px 40px;
+  font-size:15px;background:#fff;color:var(--ink)}
+.search input:focus{outline:3px solid var(--amber)}
+.search svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);opacity:.5}
+.chips{display:flex;gap:7px;overflow-x:auto;padding:11px 16px 12px;max-width:1080px;margin:0 auto;
+  scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;padding:7px 13px;border-radius:20px;font-size:13px;font-weight:600;
+  background:rgba(255,255,255,.12);color:#E4EBF5;white-space:nowrap;transition:.12s}
+.chip.on{background:var(--amber);color:var(--navy)}
+/* note */
+.note{max-width:1080px;margin:14px auto 0;padding:0 16px}
+.note-in{background:#FFF6E8;border:1px solid #F3D9A8;border-radius:10px;padding:10px 13px;
+  font-size:12.5px;color:#7A5A16;line-height:1.4}
+.note-in b{color:#5E4410}
+/* grid */
+.wrap{max-width:1080px;margin:0 auto;padding:14px 16px}
+.count{font-size:12.5px;color:var(--muted);margin:2px 2px 12px;font-weight:600}
+.grid{display:grid;grid-template-columns:1fr;gap:11px}
+@media(min-width:640px){.grid{grid-template-columns:1fr 1fr}}
+@media(min-width:940px){.grid{grid-template-columns:1fr 1fr 1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:14px;
+  display:flex;flex-direction:column;gap:9px;transition:.12s}
+.card.incart{border-color:var(--amber);box-shadow:0 0 0 2px rgba(232,133,12,.18)}
+.pn{font-family:var(--mono);font-size:14px;font-weight:700;letter-spacing:-.3px;color:var(--navy)}
+.desc{font-size:14px;font-weight:600;line-height:1.3}
+.meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:-2px}
+.tag{font-size:11px;font-weight:600;color:var(--blue);background:#E7EEF9;padding:3px 8px;border-radius:6px}
+.avail{font-size:12px;color:var(--muted)}
+.avail b{color:var(--ink)}
+.priceline{display:flex;align-items:baseline;gap:5px;margin-top:auto}
+.price{font-size:20px;font-weight:800;color:var(--navy);font-variant-numeric:tabular-nums}
+.price .cur{font-size:13px;font-weight:700;color:var(--muted)}
+.unit-lbl{font-size:11px;color:var(--muted)}
+.brl{font-size:12.5px;font-weight:700;color:#2E7D32;font-variant-numeric:tabular-nums;margin-top:-3px}
+.brl-sm{font-size:12px;font-weight:700;color:#B7D9BE;font-variant-numeric:tabular-nums}
+.rate-chip{display:inline-block;margin-top:8px;font-size:11.5px;font-weight:700;color:#2E7D32;background:#E7F4E9;border:1px solid #C4E3CB;padding:4px 10px;border-radius:14px}
+.addrow{display:flex;gap:8px;align-items:stretch}
+.stepper{display:flex;align-items:center;border:1px solid var(--line);border-radius:9px;overflow:hidden;flex:none}
+.stepper button{width:34px;font-size:19px;font-weight:600;color:var(--blue);background:#F4F7FB}
+.stepper button:active{background:#E4EBF5}
+.stepper input{width:46px;border:none;text-align:center;font-size:15px;font-weight:700;
+  font-variant-numeric:tabular-nums;-moz-appearance:textfield}
+.stepper input::-webkit-outer-spin-button,.stepper input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.add{flex:1;background:var(--amber);color:var(--navy);font-weight:800;font-size:14px;
+  border-radius:9px;padding:0 12px;transition:.12s;display:grid;place-items:center}
+.add:active{background:var(--amber-d)}
+.add.done{background:var(--ok);color:#fff}
+.empty{text-align:center;padding:60px 20px;color:var(--muted)}
+.empty svg{opacity:.35;margin-bottom:10px}
+/* cart bar */
+.cartbar{position:fixed;left:0;right:0;bottom:0;z-index:45;
+  background:var(--navy);color:#fff;padding:11px 16px calc(11px + env(safe-area-inset-bottom));
+  display:flex;align-items:center;gap:14px;box-shadow:0 -3px 16px rgba(20,41,75,.3);
+  transform:translateY(120%);transition:transform .22s ease}
+.cartbar.show{transform:translateY(0)}
+.cartbar .info{flex:1}
+.cartbar .n{font-size:13px;color:#B9C6DD;font-weight:600}
+.cartbar .t{font-size:19px;font-weight:800;font-variant-numeric:tabular-nums}
+.cartbar button{background:var(--amber);color:var(--navy);font-weight:800;font-size:15px;
+  border-radius:10px;padding:13px 22px}
+.cartbar button:active{background:var(--amber-d)}
+/* modal */
+.ov{position:fixed;inset:0;z-index:60;background:rgba(15,25,45,.55);
+  display:none;align-items:flex-end;justify-content:center}
+.ov.show{display:flex}
+@media(min-width:640px){.ov{align-items:center}}
+.sheet{background:var(--bg);width:100%;max-width:620px;max-height:92vh;border-radius:18px 18px 0 0;
+  display:flex;flex-direction:column;overflow:hidden}
+@media(min-width:640px){.sheet{border-radius:16px;max-height:88vh}}
+.sheet-h{background:var(--navy);color:#fff;padding:16px 18px;display:flex;align-items:center;justify-content:space-between;flex:none}
+.sheet-h h2{font-size:17px;font-weight:700}
+.x{width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,.14);color:#fff;font-size:19px;display:grid;place-items:center}
+.sheet-b{overflow-y:auto;padding:14px 16px;flex:1}
+.sheet-f{flex:none;padding:14px 16px calc(14px + env(safe-area-inset-bottom));background:var(--card);border-top:1px solid var(--line)}
+/* cart lines */
+.line{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:12px;margin-bottom:9px}
+.line-top{display:flex;justify-content:space-between;gap:10px}
+.line .lpn{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--navy)}
+.line .ld{font-size:13.5px;font-weight:600;margin-top:2px}
+.line .rm{color:var(--danger);font-size:12px;font-weight:700;flex:none}
+.line-bot{display:flex;align-items:center;justify-content:space-between;margin-top:10px}
+.line .lt{font-size:15px;font-weight:800;color:var(--navy);font-variant-numeric:tabular-nums}
+.subtot{display:flex;justify-content:space-between;align-items:baseline;padding:6px 4px 2px}
+.subtot .lbl{font-size:14px;color:var(--muted);font-weight:600}
+.subtot .val{font-size:24px;font-weight:800;color:var(--navy);font-variant-numeric:tabular-nums}
+/* form */
+.field{margin-bottom:12px}
+.field label{display:block;font-size:12.5px;font-weight:700;color:var(--ink);margin-bottom:5px}
+.field label .req{color:var(--danger)}
+.field input,.field textarea{width:100%;border:1px solid var(--line);border-radius:9px;
+  padding:11px 12px;font-size:15px;font-family:inherit;background:#fff}
+.field input:focus,.field textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(46,84,150,.15)}
+.field textarea{resize:vertical;min-height:64px}
+.field .err{border-color:var(--danger)!important}
+.btn{width:100%;border-radius:11px;padding:14px;font-size:15px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:9px}
+.btn-primary{background:var(--amber);color:var(--navy)}
+.btn-primary:active{background:var(--amber-d)}
+.btn-wa{background:#25D366;color:#fff;margin-top:10px}
+.btn-wa:active{background:#1EAE54}
+.btn:disabled{opacity:.5}
+.mini{font-size:11.5px;color:var(--muted);text-align:center;margin-top:11px;line-height:1.45}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <div class="brand">
+      <div class="mark">VV</div>
+      <div><h1>Van Vliet Automotive</h1><div class="sub">Peças Originais VW &bull; Excedente de estoque</div></div>
+    </div>
+    <div class="search">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#182233" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="Buscar por código ou descri&ccedil;&atilde;o…" autocomplete="off">
+    </div>
+  </div>
+  <div class="chips" id="chips"></div>
+</header>
+
+<div class="note"><div class="note-in"><b>Preços de referência</b> em EUR, ex-works (Holanda). O pedido é uma <b>solicita&ccedil;&atilde;o de cota&ccedil;&atilde;o</b> — fechamos o pre&ccedil;o final por lote/volume e retornamos com frete e prazo.<br><span class="rate-chip" id="rateChip">C&acirc;mbio de refer&ecirc;ncia: &euro; 1 = R$ 5,90</span></div></div>
+
+<main class="wrap">
+  <div class="count" id="count"></div>
+  <div class="grid" id="grid"></div>
+</main>
+
+<div class="cartbar" id="cartbar">
+  <div class="info"><div class="n" id="cbn">0 itens</div><div class="t" id="cbt">€ 0,00</div></div>
+  <button id="openCart">Ver pedido</button>
+</div>
+
+<!-- CART MODAL -->
+<div class="ov" id="cartOv">
+  <div class="sheet" role="dialog" aria-label="Seu pedido">
+    <div class="sheet-h"><h2>Seu pedido</h2><button class="x" id="closeCart" aria-label="Fechar">&times;</button></div>
+    <div class="sheet-b" id="cartLines"></div>
+    <div class="sheet-f">
+      <div class="subtot"><span class="lbl">Subtotal (ref.)</span><span class="val" id="cartTotal">€ 0,00</span></div>
+      <button class="btn btn-primary" id="toCheckout" style="margin-top:10px">Continuar</button>
+    </div>
+  </div>
+</div>
+
+<!-- CHECKOUT MODAL -->
+<div class="ov" id="coOv">
+  <div class="sheet" role="dialog" aria-label="Finalizar">
+    <div class="sheet-h"><h2>Enviar pedido</h2><button class="x" id="closeCo" aria-label="Fechar">&times;</button></div>
+    <div class="sheet-b">
+      <div class="field"><label>Empresa <span class="req">*</span></label><input id="fEmp" autocomplete="organization"></div>
+      <div class="field"><label>Seu nome <span class="req">*</span></label><input id="fNome" autocomplete="name"></div>
+      <div class="field"><label>WhatsApp ou e-mail <span class="req">*</span></label><input id="fCont" autocomplete="tel"></div>
+      <div class="field"><label>Observa&ccedil;&otilde;es</label><textarea id="fObs" placeholder="Prazo, destino, quantidade de contêiner…"></textarea></div>
+    </div>
+    <div class="sheet-f">
+      <button class="btn btn-primary" id="dl">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#14294B" stroke-width="2.4"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 21h16"/></svg>
+        Baixar planilha (.xlsx)
+      </button>
+      <button class="btn btn-wa" id="wa">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M17.5 14.4c-.3-.15-1.7-.84-2-.94-.26-.1-.45-.15-.64.15-.19.29-.74.94-.9 1.13-.17.19-.33.22-.62.07-.29-.15-1.22-.45-2.32-1.43-.86-.77-1.44-1.71-1.6-2-.17-.29-.02-.45.13-.6.13-.13.29-.34.44-.5.14-.17.19-.29.29-.48.1-.19.05-.36-.02-.5-.08-.15-.64-1.55-.88-2.12-.23-.55-.47-.48-.64-.49h-.55c-.19 0-.5.07-.76.36-.26.29-1 .98-1 2.38s1.02 2.76 1.17 2.95c.14.19 2.01 3.08 4.88 4.32.68.29 1.21.47 1.63.6.68.22 1.31.19 1.8.11.55-.08 1.7-.69 1.94-1.36.24-.67.24-1.24.17-1.36-.07-.12-.26-.19-.55-.34zM12 2a10 10 0 0 0-8.6 15.06L2 22l5.06-1.33A10 10 0 1 0 12 2z"/></svg>
+        Enviar no WhatsApp
+      </button>
+      <div class="mini">A planilha abre no Excel e em qualquer celular. Baixe e nos envie por WhatsApp ou e-mail — ou toque em <b>Enviar no WhatsApp</b> para mandar o resumo.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ==== CONFIG: coloque aqui o WhatsApp da Van Vliet (formato internacional, só números) ==== */
+const VAN_VLIET_WA = "31614283465".replace(/[^0-9]/g,""); // digits only; safe against spaces/+/dashes
+const BRL_FALLBACK = 5.90; // usado se o câmbio ao vivo falhar
+let rate = BRL_FALLBACK, rateDate = "";
+
+const ITEMS = [{"pn": "2S0129620", "d": "Filtro de ar", "q": 429, "p": 35.7, "c": "Filtros"}, {"pn": "2T0115561", "d": "Filtro", "q": 406, "p": 35.7, "c": "Filtros"}, {"pn": "2S0698075N", "d": "Lona de freio", "q": 323, "p": 40.1, "c": "Freios"}, {"pn": "2S0698075M", "d": "Lona de freio", "q": 274, "p": 39.67, "c": "Freios"}, {"pn": "2R0127177J", "d": "Filtro", "q": 595, "p": 15.97, "c": "Filtros"}, {"pn": "2R0115403", "d": "Filtro de óleo", "q": 286, "p": 26.31, "c": "Filtros"}, {"pn": "2T2127177B", "d": "Filtro", "q": 536, "p": 12.68, "c": "Filtros"}, {"pn": "2S0129620A", "d": "Filtro de ar", "q": 287, "p": 23.49, "c": "Filtros"}, {"pn": "2R2955401", "d": "Braço do limpador", "q": 300, "p": 20.13, "c": "Limpador"}, {"pn": "2T2198133C", "d": "Bico injetor", "q": 12, "p": 497.71, "c": "Combustível"}, {"pn": "2T2141025F", "d": "Platô de embreagem", "q": 15, "p": 281.88, "c": "Transmissão"}, {"pn": "2T2141031J", "d": "Disco de embreagem", "q": 10, "p": 300.67, "c": "Transmissão"}, {"pn": "2R0198133A", "d": "Bico injetor", "q": 6, "p": 465.24, "c": "Combustível"}, {"pn": "2RG609273", "d": "Rebite escareado", "q": 35000, "p": 0.07, "c": "Fixação"}, {"pn": "2R0127177L", "d": "Filtro", "q": 209, "p": 11.6, "c": "Filtros"}, {"pn": "2T2903137A", "d": "Correia poly-V (canelada)", "q": 154, "p": 15.69, "c": "Motor"}, {"pn": "2T2145061D", "d": "Turbina (turbocompressor)", "q": 2, "p": 939.44, "c": "Motor"}, {"pn": "2T2141025A", "d": "Platô de embreagem", "q": 10, "p": 173.82, "c": "Transmissão"}, {"pn": "2T2141031F", "d": "Disco de embreagem", "q": 8, "p": 216.1, "c": "Transmissão"}, {"pn": "2S0103196A", "d": "Arruela", "q": 180, "p": 9.1, "c": "Fixação"}, {"pn": "2T2145061", "d": "Turbina (turbocompressor)", "q": 2, "p": 751.67, "c": "Motor"}, {"pn": "23L911023", "d": "Motor de partida", "q": 4, "p": 354.07, "c": "Elétrica"}, {"pn": "2S2807071A", "d": "Para-choque", "q": 4, "p": 347.65, "c": "Carroceria"}, {"pn": "2V2198149", "d": "Platô de embreagem", "q": 2, "p": 676.5, "c": "Transmissão"}, {"pn": "2R0145933A", "d": "Correia poly-V (canelada)", "q": 105, "p": 11.9, "c": "Motor"}, {"pn": "2R0616787A", "d": "Purificador de ar", "q": 15, "p": 75.17, "c": "Filtros"}, {"pn": "2S2807075A", "d": "Para-choque", "q": 7, "p": 145.64, "c": "Carroceria"}, {"pn": "2S2807076A", "d": "Para-choque", "q": 7, "p": 144.71, "c": "Carroceria"}, {"pn": "2T2198149", "d": "Platô de embreagem", "q": 2, "p": 492.05, "c": "Transmissão"}, {"pn": "2T2103181B", "d": "Junta / articulação", "q": 3, "p": 317.0, "c": "Transmissão"}, {"pn": "2T2198012B", "d": "Jogo de juntas", "q": 2, "p": 451.0, "c": "Motor"}, {"pn": "2R2845101", "d": "Vidro", "q": 6, "p": 145.64, "c": "Carroceria"}, {"pn": "2T2911023A", "d": "Motor de partida", "q": 3, "p": 284.74, "c": "Elétrica"}, {"pn": "2T2141165E", "d": "Rolamento", "q": 10, "p": 82.68, "c": "Motor"}, {"pn": "2T2141165J", "d": "Coxim / suporte", "q": 7, "p": 114.63, "c": "Suspensão"}, {"pn": "2T2198012", "d": "Jogo de juntas", "q": 2, "p": 365.57, "c": "Motor"}, {"pn": "2P0903015E", "d": "Alternador", "q": 4, "p": 171.94, "c": "Elétrica"}, {"pn": "2R0698075K", "d": "Lona de freio", "q": 14, "p": 46.98, "c": "Freios"}, {"pn": "2S0198011", "d": "Jogo de juntas", "q": 2, "p": 327.28, "c": "Motor"}, {"pn": "2T2115105C", "d": "Bomba de óleo", "q": 3, "p": 218.0, "c": "Motor"}, {"pn": "2T2525025", "d": "Mecanismo", "q": 3, "p": 194.52, "c": "Diversos"}, {"pn": "2T2821151J", "d": "Suporte", "q": 4, "p": 136.74, "c": "Fixação"}, {"pn": "2S2945095B", "d": "Lanterna traseira", "q": 13, "p": 41.6, "c": "Iluminação"}, {"pn": "2T2121004", "d": "Bomba d'água", "q": 3, "p": 178.52, "c": "Arrefecimento"}, {"pn": "23H311319A", "d": "Cubo do sincronizador", "q": 1, "p": 529.25, "c": "Transmissão"}, {"pn": "2V2121113A", "d": "Válvula termostática", "q": 5, "p": 102.65, "c": "Arrefecimento"}, {"pn": "2S2821301", "d": "Para-lama", "q": 3, "p": 164.0, "c": "Carroceria"}, {"pn": "2P0127177", "d": "Filtro", "q": 10, "p": 48.86, "c": "Filtros"}, {"pn": "2T2807071A", "d": "Para-choque", "q": 1, "p": 452.29, "c": "Carroceria"}, {"pn": "2S0115105D", "d": "Bomba de óleo", "q": 3, "p": 148.39, "c": "Motor"}, {"pn": "2R2941032", "d": "Farol", "q": 12, "p": 36.89, "c": "Iluminação"}, {"pn": "2T2821152C", "d": "Suporte", "q": 3, "p": 144.21, "c": "Fixação"}, {"pn": "2VP121431", "d": "Acoplamento", "q": 2, "p": 216.1, "c": "Transmissão"}, {"pn": "2R0130758", "d": "Sensor de pressão", "q": 2, "p": 212.38, "c": "Elétrica"}, {"pn": "2S2821306", "d": "Para-lama", "q": 3, "p": 139.01, "c": "Carroceria"}, {"pn": "2T2198011A", "d": "Jogo de juntas", "q": 2, "p": 190.79, "c": "Motor"}, {"pn": "2R0145299", "d": "Amortecedor da correia", "q": 3, "p": 125.73, "c": "Motor"}, {"pn": "2T0130765", "d": "Válvula", "q": 2, "p": 186.92, "c": "Motor"}, {"pn": "2R2941031", "d": "Farol", "q": 12, "p": 28.56, "c": "Iluminação"}, {"pn": "2T2807075C", "d": "Para-choque", "q": 2, "p": 170.66, "c": "Carroceria"}, {"pn": "2T2145844Q", "d": "Mangueira", "q": 10, "p": 32.44, "c": "Arrefecimento"}, {"pn": "TAU413031", "d": "Amortecedor", "q": 6, "p": 53.56, "c": "Suspensão"}, {"pn": "23A141031", "d": "Disco de embreagem", "q": 1, "p": 304.82, "c": "Transmissão"}, {"pn": "23B129620", "d": "Filtro de ar", "q": 10, "p": 30.35, "c": "Filtros"}, {"pn": "2TB121303", "d": "Ventoinha (hélice)", "q": 2, "p": 150.33, "c": "Arrefecimento"}, {"pn": "23B807071 9B9", "d": "Para-choque", "q": 1, "p": 293.15, "c": "Carroceria"}, {"pn": "2T2821305A", "d": "Para-lama", "q": 2, "p": 143.04, "c": "Carroceria"}, {"pn": "2T2121051P", "d": "Mangueira", "q": 8, "p": 35.39, "c": "Arrefecimento"}, {"pn": "2S0121004B", "d": "Bomba d'água", "q": 3, "p": 92.08, "c": "Arrefecimento"}, {"pn": "23A911023", "d": "Motor de partida", "q": 1, "p": 272.48, "c": "Elétrica"}, {"pn": "2R2857521G", "d": "Vidro do retrovisor", "q": 9, "p": 29.88, "c": "Carroceria"}, {"pn": "2S0103609D", "d": "Junta", "q": 5, "p": 52.49, "c": "Motor"}, {"pn": "TE3103199", "d": "Arruela", "q": 250, "p": 0.9, "c": "Fixação"}, {"pn": "2U0505179A", "d": "Ilhós / passa-fio", "q": 15, "p": 14.36, "c": "Fixação"}, {"pn": "2S0398008D", "d": "Peça de fixação", "q": 1, "p": 215.15, "c": "Fixação"}, {"pn": "2S2945096B", "d": "Lanterna traseira", "q": 13, "p": 16.54, "c": "Iluminação"}, {"pn": "2T2121302", "d": "Acoplamento", "q": 1, "p": 213.87, "c": "Transmissão"}, {"pn": "2T2145844J", "d": "Mangueira", "q": 5, "p": 41.14, "c": "Arrefecimento"}, {"pn": "23B845019", "d": "Vidro / janela", "q": 5, "p": 39.58, "c": "Carroceria"}, {"pn": "23B845020", "d": "Vidro / janela", "q": 5, "p": 39.58, "c": "Carroceria"}, {"pn": "2T2145856AC", "d": "Tubo", "q": 8, "p": 24.68, "c": "Diversos"}, {"pn": "2T2121051Q", "d": "Mangueira", "q": 5, "p": 37.72, "c": "Arrefecimento"}, {"pn": "2R0130120", "d": "Arruela", "q": 9, "p": 20.45, "c": "Fixação"}, {"pn": "2T2145856A", "d": "Mangueira", "q": 6, "p": 29.52, "c": "Arrefecimento"}, {"pn": "2T2807076C", "d": "Para-choque", "q": 1, "p": 172.19, "c": "Carroceria"}, {"pn": "2R2857521L", "d": "Vidro do retrovisor", "q": 5, "p": 34.26, "c": "Carroceria"}, {"pn": "2Z0201551", "d": "Tampa", "q": 25, "p": 6.66, "c": "Diversos"}, {"pn": "2S0145863A", "d": "Bujão / tampão", "q": 10, "p": 16.62, "c": "Diversos"}, {"pn": "2U2955425", "d": "Jogo de palhetas do limpador", "q": 5, "p": 33.01, "c": "Limpador"}, {"pn": "2R0903119B", "d": "Polia", "q": 3, "p": 53.91, "c": "Motor"}, {"pn": "23B127177", "d": "Filtro", "q": 12, "p": 13.15, "c": "Filtros"}, {"pn": "2Z0130349A", "d": "Carcaça", "q": 7, "p": 21.94, "c": "Diversos"}, {"pn": "2R0121113F", "d": "Válvula termostática", "q": 5, "p": 29.82, "c": "Arrefecimento"}, {"pn": "2P0121004D", "d": "Bomba d'água", "q": 1, "p": 147.51, "c": "Arrefecimento"}, {"pn": "2R2857513 999", "d": "Carcaça", "q": 1, "p": 144.48, "c": "Diversos"}, {"pn": "2T2821306A", "d": "Para-lama", "q": 1, "p": 141.54, "c": "Carroceria"}, {"pn": "23B845011", "d": "Vidro", "q": 1, "p": 137.18, "c": "Carroceria"}, {"pn": "2S0130303E", "d": "Tubo", "q": 2, "p": 65.65, "c": "Diversos"}, {"pn": "2T2145594", "d": "Mangueira", "q": 5, "p": 26.22, "c": "Arrefecimento"}, {"pn": "23B141025", "d": "Platô de embreagem", "q": 1, "p": 126.84, "c": "Transmissão"}, {"pn": "23B857522A", "d": "Retrovisor", "q": 4, "p": 31.65, "c": "Carroceria"}, {"pn": "1J0121321B", "d": "Tampa / capa", "q": 5, "p": 24.28, "c": "Diversos"}, {"pn": "2RR512160", "d": "Bucha", "q": 1, "p": 120.27, "c": "Suspensão"}, {"pn": "2R2845201", "d": "Vidro / janela", "q": 6, "p": 19.36, "c": "Carroceria"}, {"pn": "2R2845202", "d": "Vidro / janela", "q": 6, "p": 19.36, "c": "Carroceria"}, {"pn": "2RH129723B", "d": "Presilha / clipe", "q": 20, "p": 5.67, "c": "Fixação"}, {"pn": "TE3103119", "d": "Anel de trava", "q": 250, "p": 0.45, "c": "Fixação"}, {"pn": "2U2311243A", "d": "Cubo do sincronizador", "q": 1, "p": 106.3, "c": "Transmissão"}, {"pn": "TQG117231", "d": "Mangueira", "q": 8, "p": 13.22, "c": "Arrefecimento"}, {"pn": "2TE117273", "d": "Presilha / clipe", "q": 20, "p": 5.22, "c": "Fixação"}, {"pn": "2U2311365", "d": "Cubo do sincronizador", "q": 1, "p": 96.54, "c": "Transmissão"}, {"pn": "2T0945095", "d": "Lanterna traseira", "q": 3, "p": 32.02, "c": "Iluminação"}, {"pn": "23B857521A", "d": "Retrovisor", "q": 3, "p": 31.65, "c": "Carroceria"}, {"pn": "23B955425", "d": "Jogo de palhetas do limpador", "q": 4, "p": 23.4, "c": "Limpador"}, {"pn": "2T0919823A", "d": "Interruptor / chave", "q": 1, "p": 91.44, "c": "Elétrica"}, {"pn": "2V2130233", "d": "Arruela", "q": 15, "p": 5.98, "c": "Fixação"}, {"pn": "2U2311365A", "d": "Cubo do sincronizador", "q": 1, "p": 85.37, "c": "Transmissão"}, {"pn": "2U2311309D", "d": "Cubo do sincronizador", "q": 1, "p": 84.15, "c": "Transmissão"}, {"pn": "23B141165", "d": "Coxim / suporte", "q": 1, "p": 83.15, "c": "Suspensão"}, {"pn": "2T2121101A", "d": "Mangueira", "q": 8, "p": 10.29, "c": "Arrefecimento"}, {"pn": "2R0609599", "d": "Rebite escareado", "q": 1000, "p": 0.08, "c": "Fixação"}, {"pn": "2T2145828", "d": "Mangueira", "q": 5, "p": 15.43, "c": "Arrefecimento"}, {"pn": "2W0941521", "d": "Interruptor / chave", "q": 1, "p": 76.86, "c": "Elétrica"}, {"pn": "2T0311295B", "d": "Anel", "q": 1, "p": 76.84, "c": "Diversos"}, {"pn": "2R2857521F", "d": "Vidro do retrovisor", "q": 3, "p": 25.58, "c": "Carroceria"}, {"pn": "23B854750B 9B9", "d": "Estribo", "q": 1, "p": 73.05, "c": "Carroceria"}, {"pn": "23B854749B 9B9", "d": "Estribo", "q": 1, "p": 71.44, "c": "Carroceria"}, {"pn": "23K911251", "d": "Relé", "q": 2, "p": 35.23, "c": "Elétrica"}, {"pn": "2T0311269", "d": "Anel", "q": 1, "p": 69.85, "c": "Diversos"}, {"pn": "2S0109139", "d": "Junta / articulação", "q": 2, "p": 33.87, "c": "Transmissão"}, {"pn": "2T2121101G", "d": "Mangueira", "q": 5, "p": 13.37, "c": "Arrefecimento"}, {"pn": "2U2311269", "d": "Anel", "q": 1, "p": 62.91, "c": "Diversos"}, {"pn": "2R2837398", "d": "Regulador", "q": 3, "p": 20.44, "c": "Elétrica"}, {"pn": "2T2937099", "d": "Relé", "q": 2, "p": 29.61, "c": "Elétrica"}, {"pn": "2R2837397", "d": "Regulador", "q": 3, "p": 19.04, "c": "Elétrica"}, {"pn": "2R0311478F", "d": "Sensor", "q": 1, "p": 56.79, "c": "Elétrica"}, {"pn": "T11145397", "d": "Filtro de óleo", "q": 10, "p": 5.33, "c": "Filtros"}, {"pn": "1C0945511A RDW", "d": "Interruptor / chave", "q": 2, "p": 24.11, "c": "Elétrica"}, {"pn": "2R2857551A Y20", "d": "Para-sol", "q": 3, "p": 15.68, "c": "Carroceria"}, {"pn": "2R2857552A Y20", "d": "Para-sol", "q": 3, "p": 15.68, "c": "Carroceria"}, {"pn": "TJG115441", "d": "Junta", "q": 3, "p": 15.56, "c": "Motor"}, {"pn": "23B837501", "d": "Regulador", "q": 1, "p": 46.4, "c": "Elétrica"}, {"pn": "23B837502", "d": "Regulador", "q": 1, "p": 46.4, "c": "Elétrica"}, {"pn": "2T2121103A", "d": "Mangueira", "q": 8, "p": 5.75, "c": "Arrefecimento"}, {"pn": "2T0103609", "d": "Junta", "q": 1, "p": 44.56, "c": "Motor"}, {"pn": "2R2845121", "d": "Junta", "q": 1, "p": 41.41, "c": "Motor"}, {"pn": "2RL103113", "d": "Bujão / tampão", "q": 8, "p": 4.99, "c": "Diversos"}, {"pn": "2R2955529A", "d": "Relé", "q": 8, "p": 4.97, "c": "Elétrica"}, {"pn": "2TC145915", "d": "Bujão / tampão", "q": 8, "p": 4.71, "c": "Diversos"}, {"pn": "N10256406", "d": "Lâmpada vidro amarelo", "q": 20, "p": 1.84, "c": "Iluminação"}, {"pn": "2T2919369", "d": "Sensor", "q": 2, "p": 17.62, "c": "Elétrica"}, {"pn": "2S2121473A", "d": "Mangueira", "q": 5, "p": 6.79, "c": "Arrefecimento"}, {"pn": "2R2857552 Y20", "d": "Para-sol", "q": 2, "p": 16.39, "c": "Carroceria"}, {"pn": "TAL117231", "d": "Mangueira", "q": 5, "p": 6.45, "c": "Arrefecimento"}, {"pn": "2R0971759A", "d": "Unidade emissora (sensor)", "q": 2, "p": 16.08, "c": "Elétrica"}, {"pn": "T16501317", "d": "Anel elástico (circlip)", "q": 2, "p": 15.97, "c": "Fixação"}, {"pn": "T21411045", "d": "Ilhós / passa-fio", "q": 8, "p": 3.97, "c": "Fixação"}, {"pn": "2S2907631", "d": "Válvula", "q": 1, "p": 31.39, "c": "Motor"}, {"pn": "2RK115441A", "d": "Retentor", "q": 3, "p": 10.33, "c": "Motor"}, {"pn": "2P0103196A", "d": "Arruela", "q": 10, "p": 3.06, "c": "Fixação"}, {"pn": "23B857552 NA2", "d": "Para-sol", "q": 2, "p": 15.29, "c": "Carroceria"}, {"pn": "2R2819429", "d": "Filtro", "q": 8, "p": 3.72, "c": "Filtros"}, {"pn": "BSP476088", "d": "Bomba alimentadora de combustível 24V", "q": 1, "p": 29.68, "c": "Combustível"}, {"pn": "BU0390180", "d": "Conexão hidráulica", "q": 6, "p": 4.8, "c": "Hidráulica"}, {"pn": "2R2721507", "d": "Acelerador", "q": 1, "p": 27.66, "c": "Motor"}, {"pn": "EAD122034", "d": "Bloco de alumínio hidráulico 3/4''", "q": 1, "p": 27.3, "c": "Hidráulica"}, {"pn": "2R2121168", "d": "Aba / portinhola", "q": 3, "p": 9.1, "c": "Carroceria"}, {"pn": "TRA145453", "d": "Junta", "q": 5, "p": 5.22, "c": "Motor"}, {"pn": "2T0331191", "d": "Rotor", "q": 1, "p": 25.86, "c": "Elétrica"}, {"pn": "2R0115441G", "d": "Junta / articulação", "q": 1, "p": 25.04, "c": "Transmissão"}, {"pn": "T16945525", "d": "Interruptor / chave", "q": 5, "p": 4.9, "c": "Elétrica"}, {"pn": "2T2121071", "d": "Bocal", "q": 2, "p": 12.01, "c": "Diversos"}, {"pn": "2V5919457A", "d": "Interruptor / chave", "q": 1, "p": 22.58, "c": "Elétrica"}, {"pn": "23B821305 9B9", "d": "Para-lama", "q": 2, "p": 10.42, "c": "Carroceria"}, {"pn": "2U2971759", "d": "Unidade emissora (sensor)", "q": 1, "p": 20.56, "c": "Elétrica"}, {"pn": "23B857521B", "d": "Retrovisor", "q": 1, "p": 20.2, "c": "Carroceria"}, {"pn": "23B857522B", "d": "Retrovisor", "q": 1, "p": 20.09, "c": "Carroceria"}, {"pn": "N90086601", "d": "Lâmpada", "q": 20, "p": 0.96, "c": "Iluminação"}, {"pn": "2T2501317", "d": "Retentor", "q": 2, "p": 9.12, "c": "Motor"}, {"pn": "2R2955529", "d": "Relé", "q": 3, "p": 6.03, "c": "Elétrica"}, {"pn": "2P0103035", "d": "Bujão / tampão", "q": 3, "p": 5.69, "c": "Diversos"}, {"pn": "TE3607039", "d": "Mola", "q": 5, "p": 3.24, "c": "Suspensão"}, {"pn": "2U2121103A", "d": "Mangueira", "q": 5, "p": 3.21, "c": "Arrefecimento"}, {"pn": "2R0121437A", "d": "Arruela", "q": 3, "p": 5.11, "c": "Fixação"}, {"pn": "2S0145723", "d": "Junta / articulação", "q": 3, "p": 4.38, "c": "Transmissão"}, {"pn": "23B821306 9B9", "d": "Para-lama", "q": 1, "p": 10.42, "c": "Carroceria"}, {"pn": "2R0115441F", "d": "Junta / articulação", "q": 1, "p": 10.09, "c": "Transmissão"}, {"pn": "2T2121041", "d": "Arruela", "q": 1, "p": 10.06, "c": "Fixação"}, {"pn": "2RE117273C", "d": "Presilha / clipe", "q": 2, "p": 4.74, "c": "Fixação"}, {"pn": "2RG607041", "d": "Mola", "q": 10, "p": 0.94, "c": "Suspensão"}, {"pn": "N10290206", "d": "Parafuso", "q": 10, "p": 0.87, "c": "Fixação"}, {"pn": "2P0941589A", "d": "Relé", "q": 4, "p": 1.83, "c": "Elétrica"}, {"pn": "5X0837581 NA2", "d": "Manivela", "q": 5, "p": 1.4, "c": "Motor"}, {"pn": "2S2906048A", "d": "Interruptor / chave", "q": 1, "p": 6.38, "c": "Elétrica"}, {"pn": "2S0145757", "d": "Junta / articulação", "q": 1, "p": 5.04, "c": "Transmissão"}, {"pn": "5X0837581 9B9", "d": "Manivela", "q": 5, "p": 1.0, "c": "Motor"}, {"pn": "2R2129687", "d": "Suporte", "q": 3, "p": 1.44, "c": "Fixação"}, {"pn": "TRA121110", "d": "Mangueira", "q": 4, "p": 0.38, "c": "Arrefecimento"}, {"pn": "23B807155", "d": "Tampa", "q": 1, "p": 1.11, "c": "Diversos"}, {"pn": "23B807156", "d": "Tampa", "q": 1, "p": 1.08, "c": "Diversos"}, {"pn": "MM1701069", "d": "Limitador de pressão 1'' BSP 350 Bar", "q": 16, "p": 0.01, "c": "Hidráulica"}];
+const CATS = [...new Set(ITEMS.map(i=>i.c))].sort((a,b)=>a.localeCompare(b,'pt'));
+const cart = new Map(); // pn -> qty
+let activeCat = "Todos", term = "";
+
+const eur = n => "€ " + n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const brl = n => "R$ " + (n*rate).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const byId = id => ITEMS.find(i=>i.pn===id);
+const $ = s => document.querySelector(s);
+
+/* câmbio ao vivo (ECB / Frankfurter) */
+fetch('https://api.frankfurter.app/latest?from=EUR&to=BRL')
+  .then(r=>r.json())
+  .then(d=>{ if(d && d.rates && d.rates.BRL){ rate=d.rates.BRL; rateDate=d.date; refreshRate(); } })
+  .catch(()=>{});
+function refreshRate(){
+  const el=$("#rateChip");
+  if(el) el.innerHTML = "C\u00e2mbio de refer\u00eancia: \u20ac 1 = " + brl(1) + (rateDate?(" &bull; "+rateDate.split('-').reverse().join('/')):"");
+  render();
+  if($("#cartOv").classList.contains("show")) renderCart();
+  updateBar();
+}
+
+/* chips */
+const chipsEl = $("#chips");
+["Todos",...CATS].forEach(c=>{
+  const b=document.createElement("button");
+  b.className="chip"+(c==="Todos"?" on":""); b.textContent=c; b.dataset.c=c;
+  b.onclick=()=>{activeCat=c;[...chipsEl.children].forEach(x=>x.classList.toggle("on",x.dataset.c===c));render();};
+  chipsEl.appendChild(b);
+});
+
+function visible(){
+  const t=term.trim().toLowerCase();
+  return ITEMS.filter(i=>{
+    if(activeCat!=="Todos" && i.c!==activeCat) return false;
+    if(t && !(i.pn.toLowerCase().includes(t)||i.d.toLowerCase().includes(t))) return false;
+    return true;
+  });
+}
+function render(){
+  const list=visible(), grid=$("#grid");
+  $("#count").textContent = list.length + (list.length===1?" item":" itens");
+  if(!list.length){grid.innerHTML='<div class="empty" style="grid-column:1/-1"><svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#6A7788" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg><div>Nenhuma pe&ccedil;a encontrada.</div></div>';return;}
+  grid.innerHTML="";
+  for(const i of list){
+    const inc=cart.has(i.pn);
+    const el=document.createElement("div");
+    el.className="card"+(inc?" incart":"");
+    el.innerHTML=`
+      <div class="pn">${i.pn}</div>
+      <div class="desc">${i.d}</div>
+      <div class="meta"><span class="tag">${i.c}</span><span class="avail">Dispon&iacute;vel: <b>${i.q.toLocaleString('pt-BR')}</b></span></div>
+      <div class="priceline"><span class="price"><span class="cur">€</span>${i.p.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span><span class="unit-lbl">/ un.</span></div>
+      <div class="brl">&asymp; ${brl(i.p)} / un.</div>
+      <div class="addrow">
+        <div class="stepper">
+          <button aria-label="menos" data-a="dec">&minus;</button>
+          <input type="number" min="1" max="${i.q}" value="${inc?cart.get(i.pn):1}" data-qi>
+          <button aria-label="mais" data-a="inc">+</button>
+        </div>
+        <button class="add ${inc?'done':''}" data-add>${inc?'&#10003; No pedido ('+cart.get(i.pn)+')':'Adicionar'}</button>
+      </div>`;
+    const qi=el.querySelector('[data-qi]');
+    const clamp=()=>{let v=parseInt(qi.value)||1;v=Math.max(1,Math.min(i.q,v));qi.value=v;return v;};
+    el.querySelector('[data-a="dec"]').onclick=()=>{qi.value=Math.max(1,(parseInt(qi.value)||1)-1);};
+    el.querySelector('[data-a="inc"]').onclick=()=>{qi.value=Math.min(i.q,(parseInt(qi.value)||1)+1);};
+    qi.onchange=clamp;
+    el.querySelector('[data-add]').onclick=()=>{cart.set(i.pn,clamp());updateBar();render();};
+    grid.appendChild(el);
+  }
+}
+function cartTotal(){let t=0;for(const[pn,q]of cart){t+=byId(pn).p*q;}return t;}
+function cartCount(){let n=0;for(const q of cart.values())n+=1;return n;}
+function updateBar(){
+  const n=cartCount();
+  $("#cartbar").classList.toggle("show",n>0);
+  $("#cbn").textContent=n+(n===1?" item":" itens");
+  $("#cbt").innerHTML=eur(cartTotal())+' <span class="brl-sm">&asymp; '+brl(cartTotal())+'</span>';
+}
+/* cart modal */
+function renderCart(){
+  const box=$("#cartLines");
+  if(!cart.size){box.innerHTML='<div class="empty">Seu pedido est&aacute; vazio.</div>';$("#cartTotal").innerHTML=eur(0);return;}
+  box.innerHTML="";
+  for(const[pn,q]of cart){
+    const i=byId(pn);
+    const el=document.createElement("div");el.className="line";
+    el.innerHTML=`
+      <div class="line-top"><div><div class="lpn">${pn}</div><div class="ld">${i.d}</div></div>
+      <button class="rm" data-rm>Remover</button></div>
+      <div class="line-bot">
+        <div class="stepper">
+          <button data-a="dec">&minus;</button>
+          <input type="number" min="1" max="${i.q}" value="${q}" data-qi>
+          <button data-a="inc">+</button>
+        </div>
+        <div class="lt">${eur(i.p*q)}<div class="brl" style="text-align:right">&asymp; ${brl(i.p*q)}</div></div>
+      </div>`;
+    const qi=el.querySelector('[data-qi]');
+    const set=v=>{v=Math.max(1,Math.min(i.q,parseInt(v)||1));cart.set(pn,v);renderCart();updateBar();render();};
+    el.querySelector('[data-a="dec"]').onclick=()=>set(q-1);
+    el.querySelector('[data-a="inc"]').onclick=()=>set(q+1);
+    qi.onchange=e=>set(e.target.value);
+    el.querySelector('[data-rm]').onclick=()=>{cart.delete(pn);renderCart();updateBar();render();};
+    box.appendChild(el);
+  }
+  $("#cartTotal").innerHTML=eur(cartTotal())+'<div class="brl" style="text-align:right;font-size:14px">&asymp; '+brl(cartTotal())+'</div>';
+}
+function openOv(id){$(id).classList.add("show");document.body.style.overflow="hidden";}
+function closeOv(id){$(id).classList.remove("show");document.body.style.overflow="";}
+$("#openCart").onclick=()=>{renderCart();openOv("#cartOv");};
+$("#closeCart").onclick=()=>closeOv("#cartOv");
+$("#toCheckout").onclick=()=>{if(!cart.size)return;closeOv("#cartOv");openOv("#coOv");};
+$("#closeCo").onclick=()=>closeOv("#coOv");
+[["#cartOv"],["#coOv"]].forEach(([id])=>$(id).addEventListener("click",e=>{if(e.target===$(id))closeOv(id);}));
+$("#q").addEventListener("input",e=>{term=e.target.value;render();});
+
+/* validation */
+function validate(){
+  let ok=true;
+  [["#fEmp"],["#fNome"],["#fCont"]].forEach(([s])=>{
+    const el=$(s);if(!el.value.trim()){el.classList.add("err");ok=false;}else el.classList.remove("err");
+  });
+  return ok;
+}
+function orderRows(){
+  const r=[];for(const[pn,q]of cart){const i=byId(pn);r.push({pn,d:i.d,c:i.c,q,p:i.p,t:i.p*q});}
+  return r;
+}
+/* xlsx */
+$("#dl").onclick=()=>{
+  if(!validate())return;
+  const rows=orderRows(), total=rows.reduce((s,r)=>s+r.t,0);
+  const now=new Date();
+  const dstr=now.toLocaleDateString('pt-BR')+" "+now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  const rt=rate;
+  const aoa=[
+    ["VAN VLIET AUTOMOTIVE","","","","","","",""],
+    ["Pedido de Cota\u00e7\u00e3o \u2014 Pe\u00e7as Originais VW (Excedente)","","","","","","",""],
+    ["",""],
+    ["Empresa:",$("#fEmp").value.trim(),"","Data:",dstr,"","",""],
+    ["Nome:",$("#fNome").value.trim(),"","Contato:",$("#fCont").value.trim(),"","",""],
+    ["C\u00e2mbio ref.:","\u20ac 1 = R$ "+rt.toLocaleString('pt-BR',{minimumFractionDigits:4})+(rateDate?" ("+rateDate.split('-').reverse().join('/')+")":""),"","","","","",""],
+    ["",""],
+    ["C\u00f3digo (PN)","Descri\u00e7\u00e3o","Categoria","Qtde solicitada","Pre\u00e7o unit. (EUR)","Pre\u00e7o unit. (BRL)","Total (EUR)","Total (BRL)"]
+  ];
+  rows.forEach(r=>aoa.push([r.pn,r.d,r.c,r.q,r.p,+(r.p*rt).toFixed(2),r.t,+(r.t*rt).toFixed(2)]));
+  aoa.push(["","","","","","TOTAL (ref.)",total,+(total*rt).toFixed(2)]);
+  aoa.push([""]);
+  const obs=$("#fObs").value.trim();
+  if(obs)aoa.push(["Observa\u00e7\u00f5es:",obs]);
+  aoa.push(["","Pre\u00e7os de refer\u00eancia ex-works (NL). Valores em BRL apenas indicativos (c\u00e2mbio do dia). Pre\u00e7o final por lote/volume, sob consulta."]);
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols']=[{wch:16},{wch:38},{wch:15},{wch:15},{wch:16},{wch:16},{wch:14},{wch:15}];
+  ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:7}},{s:{r:1,c:0},e:{r:1,c:7}}];
+  const hdr=7; // 0-based row of table header
+  for(let ri=hdr+1;ri<hdr+1+rows.length+1;ri++){
+    ["E","F","G","H"].forEach(col=>{const ad=col+(ri+1);if(ws[ad])ws[ad].z='#,##0.00';});
+  }
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,"Pedido");
+  const emp=($("#fEmp").value.trim()||"pedido").replace(/[^\w\u00C0-\u017F ]/g,"").replace(/\s+/g,"_");
+  XLSX.writeFile(wb,`VanVliet_Pedido_${emp}.xlsx`);
+};
+/* whatsapp */
+$("#wa").onclick=()=>{
+  if(!validate())return;
+  const rows=orderRows(), total=rows.reduce((s,r)=>s+r.t,0);
+  let msg=`*Pedido de cota\u00e7\u00e3o \u2014 Van Vliet (VW)*\n`;
+  msg+=`Empresa: ${$("#fEmp").value.trim()}\nNome: ${$("#fNome").value.trim()}\nContato: ${$("#fCont").value.trim()}\n\n`;
+  rows.forEach(r=>{msg+=`\u2022 ${r.pn} \u2014 ${r.d} \u2014 Qtde: ${r.q}\n`;});
+  msg+=`\nSubtotal ref.: ${eur(total)}  (\u2248 ${brl(total)})`;
+  const obs=$("#fObs").value.trim();if(obs)msg+=`\nObs.: ${obs}`;
+  msg+=`\n\n(planilha em anexo)`;
+  const url=`https://wa.me/${VAN_VLIET_WA}?text=${encodeURIComponent(msg)}`;
+  window.open(url,"_blank");
+};
+render();updateBar();
+</script>
+</body>
+</html>
