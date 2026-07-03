@@ -33,17 +33,15 @@ h1,h2,h3{margin:0}
   font-size:15px;background:#fff;color:var(--ink)}
 .search input:focus{outline:3px solid var(--amber)}
 .search svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);opacity:.5}
-.chipwrap{position:relative;max-width:1080px;margin:0 auto}
-.chips{display:flex;gap:7px;overflow-x:auto;padding:11px 16px 12px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
-.chips::-webkit-scrollbar{display:none}
-.chipwrap::before,.chipwrap::after{content:"";position:absolute;top:0;bottom:0;width:28px;pointer-events:none;z-index:1;opacity:0;transition:opacity .15s}
-.chipwrap::before{left:0;background:linear-gradient(90deg,var(--navy),transparent)}
-.chipwrap::after{right:0;background:linear-gradient(270deg,var(--navy),transparent)}
-.chipwrap.more-l::before{opacity:1}
-.chipwrap.more-r::after{opacity:1}
-.chip{flex:none;padding:7px 13px;border-radius:20px;font-size:13px;font-weight:600;
-  background:rgba(255,255,255,.12);color:#E4EBF5;white-space:nowrap;transition:.12s}
-.chip.on{background:var(--amber);color:var(--navy)}
+.catbar{max-width:1080px;margin:0 auto;padding:0 16px 12px}
+.catsel{display:flex;align-items:center;gap:9px;background:rgba(255,255,255,.12);
+  border-radius:10px;padding:8px 12px}
+.catsel span{font-size:12px;font-weight:600;color:#B9C6DD;flex:none}
+.catsel select{flex:1;appearance:none;-webkit-appearance:none;border:none;background:transparent;
+  color:#fff;font-family:inherit;font-size:14px;font-weight:700;padding-right:20px;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23F4B23E' stroke-width='3' stroke-linecap='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right center}
+.catsel select option{color:#14294B;background:#fff}
 /* price-promise banner */
 .promise{max-width:1080px;margin:14px auto 0;padding:0 16px}
 .promise-in{position:relative;overflow:hidden;border-radius:13px;
@@ -168,7 +166,7 @@ h1,h2,h3{margin:0}
       <input id="q" type="search" placeholder="Buscar por código ou descri&ccedil;&atilde;o…" autocomplete="off">
     </div>
   </div>
-  <div class="chipwrap"><div class="chips" id="chips"></div></div>
+  <div class="catbar"><label class="catsel"><span>Categoria</span><select id="catsel"></select></label></div>
 </header>
 
 <div class="promise"><div class="promise-in">
@@ -254,25 +252,14 @@ function refreshRate(){
   updateBar();
 }
 
-/* chips */
-const chipsEl = $("#chips");
+/* category dropdown */
+const catSel = $("#catsel");
 ["Todos",...CATS].forEach(c=>{
-  const b=document.createElement("button");
-  b.className="chip"+(c==="Todos"?" on":""); b.textContent=c; b.dataset.c=c;
-  b.onclick=()=>{activeCat=c;[...chipsEl.children].forEach(x=>x.classList.toggle("on",x.dataset.c===c));render();};
-  chipsEl.appendChild(b);
+  const o=document.createElement("option");
+  o.value=c; o.textContent=c;
+  catSel.appendChild(o);
 });
-
-/* edge fades: show only when there's more to scroll */
-const chipWrap = chipsEl.parentElement;
-function updateChipFades(){
-  const max = chipsEl.scrollWidth - chipsEl.clientWidth;
-  chipWrap.classList.toggle("more-l", chipsEl.scrollLeft > 2);
-  chipWrap.classList.toggle("more-r", chipsEl.scrollLeft < max - 2);
-}
-chipsEl.addEventListener("scroll", updateChipFades, {passive:true});
-window.addEventListener("resize", updateChipFades);
-updateChipFades();
+catSel.onchange=()=>{activeCat=catSel.value;render();};
 
 function visible(){
   const t=term.trim().toLowerCase();
